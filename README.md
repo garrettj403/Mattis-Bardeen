@@ -57,14 +57,15 @@ Mattis-Bardeen theory is described in:
 
    - D. C. Mattis and J. Bardeen, “Theory of the Anomalous Skin Effect in Normal and Superconducting Metals,” Phys. Rev., vol. 111, no. 2, pp. 412–417, Jul. 1958.
 
-For the purposes of this package, I also used the following papers:
+For the purposes of this package, I also referenced the following papers:
 
+   - V. Y. Belitsky and E. L. Kollberg, “Superconductor–insulator–superconductor tunnel strip line: Features and applications,” J. Appl. Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
 
+   - V. Belitsky, C. Risacher, M. Pantaleev, and V. Vassilev, “Superconducting microstrip line model studies at millimetre and sub-millimetre waves,” Int. J. Infrared Millimeter Waves, vol. 27, no. 6, pp. 809–834, Feb. 2006.
+   
    - A. R. Kerr, “Surface Impedance of Superconductors and Normal Conductors in EM Simulators,” Green Bank, West Virginia, 1996.
 
-   - V. Y. Belitsky and E. L. Kollberg, “Superconductor–insulator–superconductor tunnel strip line: Features and applications,” J. Appl. Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
-
-   - V. Y. Belitsky and E. L. Kollberg, “Superconductor–insulator–superconductor tunnel strip line: Features and applications,” J. Appl. Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
+   - J. P. Turneaure, J. Halbritter, and H. A. Schwettman, “The surface impedance of superconductors and normal conductors: The Mattis-Bardeen theory,” J. Supercond., vol. 4, no. 5, pp. 341–355, Oct. 1991.
 
 License
 -------
