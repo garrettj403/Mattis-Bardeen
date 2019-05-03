@@ -2,3 +2,5 @@
 .pytest_cache
 
 *.pyc
+
+Mattis_Bardeen.egg-info/

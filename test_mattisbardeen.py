@@ -137,6 +137,8 @@ def test_belitsky2006_fig2():
 
 
 def test_compare_simple_and_MB_models():
+    """Compare the surface impedance that is calculated from Mattis-Bardeen 
+    theory to the results from [1]."""
 
     # Frequency
     f = np.arange(100, 1000, 100) * 1e9

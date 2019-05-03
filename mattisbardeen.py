@@ -13,10 +13,6 @@ References:
     superconductor tunnel strip line: Features and applications,” J. 
     Appl. Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
 
-    [3] V. Y. Belitsky and E. L. Kollberg, “Superconductor–insulator–
-    superconductor tunnel strip line: Features and applications,” J. 
-    Appl. Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
-
 """
 
 from copy import deepcopy
