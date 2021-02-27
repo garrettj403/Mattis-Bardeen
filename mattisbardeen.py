@@ -67,7 +67,7 @@ def conductance(f, T, Vgap, **kwargs):
         return sigma
     elif isinstance(f, np.ndarray):
         sigma = np.empty_like(f, dtype=complex)
-        for i in range(np.alen(f)):
+        for i in range(len(f)):
             sigma[i] = _conductance(f[i], T, Vgap, **kw)
         return sigma
     else:
@@ -221,7 +221,7 @@ def surface_impedance(f, d, T, Vgap, method='MB', **kw):
             return _surface_impedance(f, d, T, Vgap, **kw)
         elif isinstance(f, np.ndarray):
             zs = np.empty_like(f, dtype=complex)
-            for i in range(np.alen(f)):
+            for i in range(len(f)):
                 zs[i] = _surface_impedance(f[i], d, T, Vgap, **kw)
             return zs
 
