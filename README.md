@@ -6,9 +6,9 @@ Mattis-Bardeen
 Installation
 ------------
 
-This package is still under development. I recommend cloning the repo and then installing by:
+You can install this package via:
 ```
-pip install -e Mattis-Bardeen/
+python3 -m pip install git+https://github.com/garrettj403/Mattis-Bardeen.git
 ```
 
 Usage
