@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = "Mattis-Bardeen",
-    version = "0.0.1dev",
-    author = "John Garrett",
-    author_email = "garrettj403@gmail.com",
-    description = ("Calculate the electrical properties of superconductors using Mattis-Bardeen theory."),
-    license = "GPL v3",
-    keywords = "superconductivity, physics, superconducting detectors, terahertz instrumentation, Python",
-    # url = "https://garrettj403.github.io/",
+    name="Mattis-Bardeen",
+    version="0.0.1dev",
+    author="John Garrett",
+    author_email="garrettj403@gmail.com",
+    description=("Calculate the electrical properties of superconductors using Mattis-Bardeen theory."),
+    license="GPL v3",
+    keywords="superconductivity, physics, superconducting detectors, terahertz instrumentation, Python",
+    # url="https://garrettj403.github.io/",
     packages=find_packages(),
     install_requires=[
         'numpy',

@@ -1,10 +1,8 @@
-"""Tests for the mattisbardeen.py module."""
+"""Tests for the mattisbardeen module."""
 
 import mattisbardeen as mb
-import matplotlib.pyplot as plt 
-import numpy as np 
+import numpy as np
 import scipy.constants as sc
-import timeit
 
 
 # Constants (all energies in eV)
@@ -135,9 +133,8 @@ def test_belitsky2006_fig2():
     assert max_difference < 0.1
 
 
-
 def test_compare_simple_and_MB_models():
-    """Compare the surface impedance that is calculated from Mattis-Bardeen 
+    """Compare the surface impedance that is calculated from Mattis-Bardeen
     theory to the results from [1]."""
 
     # Frequency
@@ -145,7 +142,7 @@ def test_compare_simple_and_MB_models():
 
     # Surface impedance (using both models)
     zs_simple = mb.surface_impedance(f, 250e-9, 4., 2.75e-3, method='simple')
-    zs_mb     = mb.surface_impedance(f, 250e-9, 4., 2.75e-3, method='MB')
+    zs_mb = mb.surface_impedance(f, 250e-9, 4., 2.75e-3, method='MB')
 
     # Below ~fgap/2, both models should be roughly the same
     mask = f < 350e9

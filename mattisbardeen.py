@@ -1,26 +1,25 @@
 """Calculate the electrical properties of superconductors using Mattis-Bardeen
 theory.
 
-Warning: The integrals are pretty inefficient... be careful and check your 
+Warning: The integrals are pretty inefficient... be careful and check your
 results!
 
 References:
 
-    [1] A. R. Kerr, “Surface Impedance of Superconductors and Normal 
+    [1] A. R. Kerr, “Surface Impedance of Superconductors and Normal
     Conductors in EM Simulators,” Green Bank, West Virginia, 1996.
 
     [2] V. Y. Belitsky and E. L. Kollberg, “Superconductor–insulator–
-    superconductor tunnel strip line: Features and applications,” J. 
+    superconductor tunnel strip line: Features and applications,” J.
     Appl. Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
 
 """
 
 from copy import deepcopy
 
-import matplotlib.pyplot as plt
-import numba
 import numpy as np
 import scipy.constants as sc
+# import numba
 
 
 # Constants (all energies in eV)
@@ -29,12 +28,12 @@ h = sc.h / sc.e
 hbar = sc.h / (2 * sc.pi) / sc.e
 
 
-# Default parameters (for niobium, from [2])
-PARAM = dict(Tc       = 9.0,         # Critical temperature [K]
-             Vgap0    = 2.862e-3,    # Gap voltage at T=0K [V]
-             sigma_n  = 1.565e7,     # Normal-state conductivity [1/ohm*m]
-             lambda0  = 85*sc.nano,  # London penetration depth at T=0K [m]
-            )
+# Default parameters (for niobium, from ref. [2])
+PARAM = dict(Tc=9.0,              # critical temperature [K]
+             Vgap0=2.862e-3,      # gap voltage at T=0K [V]
+             sigma_n=1.565e7,     # normal-state conductivity [1/ohm*m]
+             lambda0=85*sc.nano,  # London penetration depth at T=0K [m]
+             )
 
 
 # Conductance ----------------------------------------------------------------
@@ -52,7 +51,7 @@ def conductance(f, T, Vgap, **kwargs):
         sigma_n (float): normal-state conductance, in units [1/ohm*m]
         lambda0 (float): London penetration depth at T=0K, in units [m]
 
-    Returns: 
+    Returns:
         conductance
 
     """
@@ -88,15 +87,15 @@ def _conductance(f, T, Vgap, **kwargs):
         sigma_n (float): normal-state conductance, in units [1/ohm*m]
         lambda0 (float): London penetration depth at T=0K, in units [m]
 
-    Returns: 
+    Returns:
         conductance
 
     """
 
     # Unpack keyword arguments
-    Tc = kwargs['Tc']
+    # tc = kwargs['Tc']
     sigma_n = kwargs['sigma_n']
-    
+
     # Other parameters
     delta = Vgap / 2   # binding energy
     fgap = Vgap / h    # gap frequency
@@ -205,7 +204,7 @@ def surface_impedance(f, d, T, Vgap, method='MB', **kw):
         sigma_n (float): normal-state conductance, in units [1/ohm*m]
         lambda0 (float): London penetration depth at T=0K, in units [m]
 
-    Returns: 
+    Returns:
         surface impedance
 
     """
@@ -236,7 +235,7 @@ def surface_impedance(f, d, T, Vgap, method='MB', **kw):
 
 
 def _surface_impedance(f, d, T, Vgap, **kw):
-    """Calculate the surface impedance of a superconductor at a single 
+    """Calculate the surface impedance of a superconductor at a single
     frequency point.
 
     Args:
@@ -253,27 +252,26 @@ def _surface_impedance(f, d, T, Vgap, **kw):
         sigma_n (float): normal-state conductance, in units [1/ohm*m]
         lambda0 (float): London penetration depth at T=0K, in units [m]
 
-    Returns: 
+    Returns:
         surface impedance
 
     """
 
     # Angular frequency
-    w = 2 * sc.pi * f 
+    w = 2 * sc.pi * f
 
     # Conductance (using Mattis-Bardeen theory)
     sigma = _conductance(f, T, Vgap, **kw)
 
     # Surface impedance (Eqn. 5 in [2])
-    zs = np.sqrt(1j * w * sc.mu_0 / sigma) / \
-         np.tanh(np.sqrt(1j * w * sc.mu_0 * sigma) * d)
+    zs = (np.sqrt(1j * w * sc.mu_0 / sigma) / np.tanh(np.sqrt(1j * w * sc.mu_0 * sigma) * d))
 
     return zs
 
 
 def _surface_impedance_simple(f, d, dl):
     """Calculate the surface impedance of a superconductor using the simple
-    model presented in [1]. This techniques assumes that the frequency much 
+    model presented in [1]. This techniques assumes that the frequency much
     lower than the gap frequency.
 
     Args:
@@ -332,7 +330,7 @@ def hfield_penetration(zs, f):
 
     return zs.real / (w * sc.mu_0)
 
-    
+
 # Lambda ---------------------------------------------------------------------
 
 def _lambda0(Vgap0=None, sigma_n=None, **kw):
