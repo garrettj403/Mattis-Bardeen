@@ -1,18 +1,25 @@
 Mattis-Bardeen
 ==============
 
+[![ci](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/ci.yml/badge.svg)](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/ci.yml)
+[![flake8](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/linter.yml/badge.svg)](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/linter.yml)
+
 *Calculate the electrical properties of superconductors using Mattis-Bardeen theory.*
 
-Installation
-------------
+Getting Started
+---------------
 
-You can install this package via:
-```
-python3 -m pip install git+https://github.com/garrettj403/Mattis-Bardeen.git
-```
+You can install the Mattis-Bardeen package using ``pip``:
 
-Usage
------
+   ```bash
+   # to install the latest commit (from GitHub)
+   git clone https://github.com/garrettj403/Mattis-Bardeen.git
+   cd Mattis-Bardeen
+   pip install -e .
+   ```
+
+Example
+-------
 
 Using the package is relatively straight-forward. For example, to calculate the surface impedance of a superconductor:
 ```python
@@ -33,7 +40,7 @@ Vgap = 2.8e-3  # gap voltage at temperature T in [V]
 # Frequency in [Hz]
 f = np.linspace(0, 1000, 201) * 1e9
 
-# Surface impedance
+# Surface impedance [ohm / sq.]
 Zs = mb.surface_impedance(f, d, T, Vgap, **param)
 
 # Plot results
@@ -41,8 +48,8 @@ fig, ax = plt.subplots()
 ax.plot(f/1e9, Zs.real, label='Real')
 ax.plot(f/1e9, Zs.imag, 'r', label='Imaginary')
 ax.legend()
-ax.set(xlabel='Frequency (GHz)', xlim=[0, 1000],
-       ylabel=r'Surface impedance ($\Omega$/sq.)', ylim=[0, 1.1])
+ax.set(xlabel='Frequency (GHz)', xlim=[0, 1000])
+ax.set(ylabel=r'Surface impedance ($\Omega$/sq.)', ylim=[0, 1.1])
 plt.show()
 
 ```
