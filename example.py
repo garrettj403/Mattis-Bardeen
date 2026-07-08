@@ -3,9 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants as sc
 
-
-# Optional
-plt.style.use(['science', 'notebook'])
+import scienceplots
+plt.style.use(['science'])
 
 # Properties of the superconducting material, i.e., normal-state conductance,
 # critical temperature, gap voltage at T=0K, and penetration depth
@@ -17,16 +16,19 @@ T = 4.         # ambient temperature in [K]
 Vgap = 2.8e-3  # gap voltage at temperature T in [V]
 
 # Frequency in [Hz]
-f = np.linspace(0, 1000, 201) * 1e9
+f = np.linspace(0, 4000, 201) * 1e9
 
 # Surface impedance [ohm / sq.]
 Zs = mb.surface_impedance(f, d, T, Vgap, **param)
 
 # Plot results
-fig, ax = plt.subplots()
-ax.plot(f/1e9, Zs.real, label='Real')
+fig, ax = plt.subplots(figsize=(4, 3))
+ln, = ax.plot(f/1e9, Zs.real, label='Real')
+ax.plot(f/1e9, np.sqrt(sc.mu_0 * (2 * np.pi * f) / 2 / 1.74e7), c=ln.get_color(), ls='--', label='Normal state')
 ax.plot(f/1e9, Zs.imag, 'r', label='Imaginary')
+ax.plot(f/1e9, sc.mu_0 * (86*sc.nano) / np.tanh(d / 86 / sc.nano) * (2 * np.pi * f), 'r--', label="Surface inductance")
 ax.legend()
-ax.set(xlabel='Frequency (GHz)', xlim=[0, 1000])
+ax.set(xlabel='Frequency (GHz)', xlim=[0, 4000])
 ax.set(ylabel=r'Surface impedance ($\Omega$/sq.)', ylim=[0, 1.1])
-plt.savefig("example.png", dpi=600)
+# plt.show()
+fig.savefig("mattis-bardeen.png", dpi=400)
