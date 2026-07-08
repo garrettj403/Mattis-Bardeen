@@ -4,3 +4,4 @@
 *.pyc
 
 Mattis_Bardeen.egg-info/
+.ipynb_checkpoints/
