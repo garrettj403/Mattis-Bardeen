@@ -7,11 +7,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run tests: `make test` (runs `py.test test_mattisbardeen.py --verbose --doctest-modules`)
 - Run a single test: `python -m pytest test_mattisbardeen.py::test_belitsky1995_fig6 -v`
 - Coverage: `make cov` (terminal) or `make cov-report` (HTML)
+- Lint: `flake8 .` (config in `.flake8`: `max-line-length = 120`, excludes `.ipynb_checkpoints`)
 - Install for development: `pip install -e .`
+
+## CI
+
+Two GitHub Actions workflows run on every push and pull request (`.github/workflows/`):
+
+- `ci.yml` — runs `pytest -v` on ubuntu, windows, and macOS (Python 3.12, via conda).
+- `linter.yml` — runs `flake8 .`; the build fails on any lint error, so keep the tree flake8-clean before pushing.
+
+Both must be green. The `flake8` config in `.flake8` is the source of truth for style; match it rather than reformatting to a different convention.
 
 ## Architecture
 
 Single-module Python package (`mattisbardeen.py`) that computes the electrical properties of superconductors from Mattis-Bardeen theory. No subpackages; `example.py` is a standalone plotting script.
+
+Because the code is a single top-level module (not a package directory), `setup.py` ships it via `py_modules=["mattisbardeen"]` — **not** `find_packages()`, which returns `[]` here and would silently package no code. Keep `py_modules` in sync if the module is ever renamed or split.
 
 ### Core computation flow
 
