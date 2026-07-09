@@ -35,11 +35,11 @@ _EPSREL = 1.49e-8
 
 
 # Default parameters (for niobium, from [2])
-PARAM = dict(Tc       = 9.0,         # Critical temperature [K]
-             Vgap0    = 2.862e-3,    # Gap voltage at T=0K [V]
-             sigma_n  = 1.565e7,     # Normal-state conductivity [1/ohm*m]
-             lambda0  = 85*sc.nano,  # London penetration depth at T=0K [m]
-            )
+PARAM = dict(Tc=9.0,              # Critical temperature [K]
+             Vgap0=2.862e-3,      # Gap voltage at T=0K [V]
+             sigma_n=1.565e7,     # Normal-state conductivity [1/ohm*m]
+             lambda0=85*sc.nano,  # London penetration depth at T=0K [m]
+             )
 
 
 # Conductance ----------------------------------------------------------------
@@ -150,9 +150,9 @@ def _conductance(f, T, Vgap, **kwargs):
 
         def _radiation(theta):
             e = c + r * np.sin(theta)
-            return (1 - 2 * fermi(e + hw, T)) * \
-                   np.abs(e**2 + delta**2 + hw*e) / \
-                   np.sqrt((delta - e) * (e + hw + delta))
+            return ((1 - 2 * fermi(e + hw, T))
+                    * np.abs(e**2 + delta**2 + hw*e)
+                    / np.sqrt((delta - e) * (e + hw + delta)))
 
         radiation = 1 / hw * quad(_radiation, -np.pi/2, np.pi/2,
                                   epsabs=_EPSABS, epsrel=_EPSREL)[0]

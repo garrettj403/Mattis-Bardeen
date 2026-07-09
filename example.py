@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants as sc
 
-import scienceplots
+import scienceplots  # noqa: F401 -- registers the 'science' style
 plt.style.use(['science'])
 
 # Properties of the superconducting material, i.e., normal-state conductance,
