@@ -74,7 +74,7 @@ Zs = mb.surface_impedance(f, d, T, **param)
 Vgap = mb.gap_voltage(T, Vgap0=2.65e-3, Tc=8.1)  # 2.516 mV
 ```
 
-Films of finite thickness, stacks of films and normal metals use a transmission-line model of the film (with the displacement current and the impedance behind the film, free space by default):
+Films of finite thickness, stacks of films and normal metals use a transmission-line model of the film, following SuperMix (Ward et al., 1999; see References), with the displacement current and the impedance behind the film (free space by default):
 ```python
 # Single film, with free space behind it (or e.g. z_back=0 for a perfect conductor)
 Zs = mb.surface_impedance(f, d, T, method='film', **param)
@@ -108,6 +108,8 @@ For the purposes of this package, I also referenced the following papers:
    - B. Mühlschlegel, “Die thermodynamischen Funktionen des Supraleiters,” Z. Phys., vol. 155, pp. 313–327, 1959.
 
    - J. P. Turneaure, J. Halbritter, and H. A. Schwettman, “The surface impedance of superconductors and normal conductors: The Mattis-Bardeen theory,” J. Supercond., vol. 4, no. 5, pp. 341–355, Oct. 1991.
+
+   - J. Ward, F. Rice, G. Chattopadhyay, and J. Zmuidzinas, “SuperMix: A flexible software library for high-frequency circuit simulation, including SIS mixers and superconducting elements,” in Proceedings of the Tenth International Symposium on Space Terahertz Technology (ISSTT), Charlottesville, VA, 1999, pp. 268–280.
 
 License
 -------
