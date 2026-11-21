@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mattis-bardeen"
+version = "1.0.0"
+description = "Calculate the electrical properties of superconductors using Mattis-Bardeen theory."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "John Garrett", email = "garrettj403@gmail.com" }]
+keywords = [
+    "superconductivity",
+    "physics",
+    "superconducting detectors",
+    "terahertz instrumentation",
+]
+dependencies = ["numpy", "scipy"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "flake8", "build", "twine"]
+
+[project.urls]
+Homepage = "https://github.com/garrettj403/Mattis-Bardeen"
+Issues = "https://github.com/garrettj403/Mattis-Bardeen/issues"
+
+[tool.setuptools]
+# Single top-level module, not a package directory: ship it explicitly.
+py-modules = ["mattisbardeen"]
+
+[tool.pytest.ini_options]
+testpaths = ["test_mattisbardeen.py", "mattisbardeen.py"]
+addopts = "--doctest-modules"

@@ -5,21 +5,19 @@
 # http://krzysztofzuraw.com/blog/2016/makefiles-in-python-projects.html
 #
 
-CODE_PATH=./mattisbardeen.py
-TEST_PATH=./test_mattisbardeen.py
-
 all: test clean
 
 # Run tests (with Py.Test) ---------------------------------------------------
 
+# Test paths and --doctest-modules are configured in pyproject.toml
 test:
-	py.test $(TEST_PATH) --verbose --doctest-modules --color=yes
+	pytest --verbose --color=yes
 
 cov:
-	py.test $(TEST_PATH) --verbose --doctest-modules --color=yes --cov=$(CODE_PATH) --cov-report=term-missing
+	pytest --verbose --color=yes --cov=mattisbardeen --cov-report=term-missing
 
-cov-report: 
-	py.test $(TEST_PATH) --verbose --doctest-modules --color=yes --cov=$(CODE_PATH) --cov-report=html
+cov-report:
+	pytest --verbose --color=yes --cov=mattisbardeen --cov-report=html
 	open htmlcov/index.html
 
 clean-test:
@@ -27,17 +25,18 @@ clean-test:
 	
 # Build ----------------------------------------------------------------------
 
-build:
-	python setup.py sdist
+build: clean-build
+	python -m build
+	twine check dist/*
 
-upload:
+upload-test: build
+	twine upload --repository testpypi dist/*
+
+upload: build
 	twine upload dist/*
 
 clean-build:
-	rm -rf build/
-	rm -rf dist/
-	rm -rf QMix.egg-info/
-	rm MANIFEST
+	rm -rf build/ dist/ *.egg-info/
 
 # Clean ----------------------------------------------------------------------
 
@@ -54,4 +53,4 @@ clean: clean-bytecode clean-hidden clean-test clean-build
 
 # Misc -----------------------------------------------------------------------
 
-.PHONY: all test clean-test clean clean-bytecode clean-hidden
+.PHONY: all test cov cov-report build upload-test upload clean-build clean-test clean clean-bytecode clean-hidden

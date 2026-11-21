@@ -9,13 +9,18 @@ Mattis-Bardeen
 Getting Started
 ---------------
 
-You can install the Mattis-Bardeen package using ``pip``:
+You can install the Mattis-Bardeen package from [PyPI](https://pypi.org/project/mattis-bardeen/) using ``pip``:
 
    ```bash
-   # to install the latest commit (from GitHub)
+   pip install mattis-bardeen
+   ```
+
+Or, to install the latest commit for development:
+
+   ```bash
    git clone https://github.com/garrettj403/Mattis-Bardeen.git
    cd Mattis-Bardeen
-   pip install -e .
+   pip install -e ".[dev]"
    ```
 
 Example
@@ -29,13 +34,15 @@ import matplotlib.pyplot as plt
 import scipy.constants as sc
 
 # Properties of the superconducting material, i.e., normal-state conductance,
-# critical temperature, gap voltage at T=0K, and penetration depth
+# critical temperature, gap voltage at T=0K, and penetration depth at T=0K
+# (lambda0 is only used by method='simple'; Mattis-Bardeen uses the value
+# implied by sigma_n and Vgap0, see mb.penetration_depth)
 param = dict(sigma_n=1.74e7, Tc=8.1, Vgap0=2.65e-3, lambda0=86*sc.nano)
 
 # Properties of the specific superconductor
 d = 100e-9     # thickness of the superconducting film in [m]
 T = 4.         # ambient temperature in [K]
-Vgap = 2.8e-3  # gap voltage at temperature T in [V]
+Vgap = 2.8e-3  # gap voltage at temperature T in [V] (optional, see below)
 
 # Frequency in [Hz]
 f = np.linspace(0, 1000, 201) * 1e9
@@ -54,8 +61,32 @@ plt.show()
 
 ```
 <center>
-<img src="example.png" alt="drawing" width="500">
+<img src="https://raw.githubusercontent.com/garrettj403/Mattis-Bardeen/master/example.png" alt="drawing" width="500">
 </center>
+
+If the gap voltage at temperature ``T`` is not known, omit ``Vgap`` and it is calculated from ``Vgap0`` and ``Tc`` by solving the BCS gap equation:
+```python
+Zs = mb.surface_impedance(f, d, T, **param)
+
+# or calculate the gap voltage directly
+Vgap = mb.gap_voltage(T, Vgap0=2.65e-3, Tc=8.1)  # 2.516 mV
+```
+
+Films of finite thickness, stacks of films and normal metals use a transmission-line model of the film (with the displacement current and the impedance behind the film, free space by default):
+```python
+# Single film, with free space behind it (or e.g. z_back=0 for a perfect conductor)
+Zs = mb.surface_impedance(f, d, T, method='film', **param)
+
+# A thin Nb film on 300 nm of gold (normal metal: constant conductivity)
+sigma_nb = mb.conductance(f, T, **param)
+Zs = mb.film_impedance(f, [(sigma_nb, 20e-9), (1 / 2.2e-8, 300e-9)])
+
+# Above Tc, the normal state
+Zs = mb.surface_impedance(f, d, 10., **param)
+
+# BCS penetration depth
+lam = mb.penetration_depth(T, **param)
+```
 
 References
 ----------
@@ -72,9 +103,11 @@ For the purposes of this package, I also referenced the following papers:
    
    - A. R. Kerr, “Surface Impedance of Superconductors and Normal Conductors in EM Simulators,” Green Bank, West Virginia, 1996.
 
+   - B. Mühlschlegel, “Die thermodynamischen Funktionen des Supraleiters,” Z. Phys., vol. 155, pp. 313–327, 1959.
+
    - J. P. Turneaure, J. Halbritter, and H. A. Schwettman, “The surface impedance of superconductors and normal conductors: The Mattis-Bardeen theory,” J. Supercond., vol. 4, no. 5, pp. 341–355, Oct. 1991.
 
 License
 -------
 
-This package is released under a [GNU General Public License, Version 3](https://github.com/garrettj403/Mattis-Bardeen/blob/master/LICENSE).
+This package is released under the [GNU General Public License](https://github.com/garrettj403/Mattis-Bardeen/blob/master/LICENSE), either version 3 of the License, or (at your option) any later version.
