@@ -1,8 +1,10 @@
 Mattis-Bardeen
 ==============
 
+[![PyPI version](https://badge.fury.io/py/mattis-bardeen.svg)](https://badge.fury.io/py/mattis-bardeen)
 [![ci](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/ci.yml/badge.svg)](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/ci.yml)
 [![flake8](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/linter.yml/badge.svg)](https://github.com/garrettj403/Mattis-Bardeen/actions/workflows/linter.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/garrettj403/mattis-bardeen/blob/master/LICENSE)
 
 *Calculate the electrical properties of superconductors using Mattis-Bardeen theory.*
 
