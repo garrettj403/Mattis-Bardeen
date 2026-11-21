@@ -31,7 +31,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "flake8", "build", "twine"]
+dev = ["pytest", "pytest-cov", "flake8", "build", "twine"]
 
 [project.urls]
 Homepage = "https://github.com/garrettj403/Mattis-Bardeen"

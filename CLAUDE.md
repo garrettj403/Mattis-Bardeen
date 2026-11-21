@@ -25,7 +25,7 @@ GitHub Actions workflows (`.github/workflows/`); the first two run on every push
 
 ## Architecture
 
-Single-module Python package (`mattisbardeen.py`) that computes the electrical properties of superconductors from Mattis-Bardeen theory. No subpackages; `example.py` is a standalone plotting script.
+Single-module Python package (`mattisbardeen.py`) that computes the electrical properties of superconductors from Mattis-Bardeen theory. No subpackages; `examples/example.py` is a standalone plotting script (needs `scienceplots`) that writes `examples/example.png`, the figure shown in the README.
 
 Packaging is in `pyproject.toml` (setuptools backend; there is no `setup.py`). The PyPI distribution name is `mattis-bardeen`; the import name is `mattisbardeen`. Because the code is a single top-level module (not a package directory), it is shipped via `[tool.setuptools] py-modules = ["mattisbardeen"]` — do not switch to package auto-discovery, which would silently package no code. Keep `py-modules` in sync if the module is ever renamed or split.
 

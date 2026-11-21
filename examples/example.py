@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import mattisbardeen as mb
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,4 +32,5 @@ ax.plot(f/1e9, sc.mu_0 * (86*sc.nano) / np.tanh(d / 86 / sc.nano) * (2 * np.pi *
 ax.legend()
 ax.set(xlabel='Frequency (GHz)', xlim=[0, 4000])
 ax.set(ylabel=r'Surface impedance ($\Omega$/sq.)', ylim=[0, 1.1])
-fig.savefig("example.png", dpi=400)
+# Save next to this script (examples/example.png is the README figure)
+fig.savefig(Path(__file__).with_name("example.png"), dpi=400)
