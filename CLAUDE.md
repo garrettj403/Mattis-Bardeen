@@ -9,16 +9,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Coverage: `make cov` (terminal) or `make cov-report` (HTML)
 - Lint: `flake8 .` (config in `.flake8`: `max-line-length = 120`, excludes `.ipynb_checkpoints`)
 - Install for development: `pip install -e ".[dev]"`
-- Build and check a release: `make build` (`python -m build` + `twine check`); upload with `make upload-test` (TestPyPI) or `make upload` (PyPI). Bump `version` in `pyproject.toml` first — PyPI never accepts the same version twice.
+- Release: bump `version` in `pyproject.toml` (PyPI never accepts the same version twice), commit, push, then create a GitHub release tagged `v<version>`; `publish.yml` tests, builds and uploads it. Local fallback: `make build` (`python -m build` + `twine check`), `make upload-test` / `make upload` (needs a PyPI token).
 
 ## CI
 
-Two GitHub Actions workflows run on every push and pull request (`.github/workflows/`):
+GitHub Actions workflows (`.github/workflows/`); the first two run on every push and pull request:
 
 - `ci.yml` — runs `pytest -v` on ubuntu, windows, and macOS (Python 3.12, via conda).
 - `linter.yml` — runs `flake8 .`; the build fails on any lint error, so keep the tree flake8-clean before pushing.
+- `publish.yml` — on a published GitHub release: checks the tag matches `pyproject.toml`'s version, runs the tests, builds, and uploads to PyPI via trusted publishing (environment `pypi`; no token in the repo).
 
-Both must be green. The `flake8` config in `.flake8` is the source of truth for style; match it rather than reformatting to a different convention.
+`ci.yml` can also be started by hand (`gh workflow run ci`). GitHub auto-disables scheduled workflows after 60 days without repo activity; re-enabling does not re-run past pushes.
+
+`ci` and `linter` must be green. The `flake8` config in `.flake8` is the source of truth for style; match it rather than reformatting to a different convention.
 
 ## Architecture
 
