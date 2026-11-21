@@ -389,6 +389,106 @@ def test_kerr1996_finite_thickness():
     np.testing.assert_allclose(zs, mb._surface_impedance_simple(f, t, lam), rtol=1e-5)
 
 
+def test_two_sided_excitation():
+    """Fields on both sides of a film (Kerr 1996, Appendix A6 and A7):
+    Zs = Z1 [coth(gamma t) +/- csch(gamma t)] ('symmetric' / 'antisymmetric').
+
+    Normal conductor: Z1 = k / sigma, gamma = k = (1 + j) / delta. London
+    superconductor: Z1 = j w mu0 lambda, gamma = 1 / lambda (Kerr prints
+    sinh, and tabulates csch / 2, in place of csch; his derivation gives
+    csch, which the thin-film limit below confirms)."""
+
+    def coth(x):
+        return 1 / np.tanh(x)
+
+    def csch(x):
+        return 1 / np.sinh(x)
+
+    f = np.array([10e9, 100e9, 1e12])
+    w = 2 * np.pi * f
+
+    # Normal conductor
+    rho = 2e-8
+    skin = np.sqrt(2 * rho / (w * sc.mu_0))
+    k = (1 + 1j) / skin
+    for t_over_skin in [0.05, 0.5, 2.]:
+        t = t_over_skin * skin
+        for excitation, sign in [('symmetric', 1), ('antisymmetric', -1)]:
+            zs = np.array([mb.film_impedance(fi, [(1 / rho, ti)], excitation=excitation) for fi, ti in zip(f, t)])
+            np.testing.assert_allclose(zs, k * rho * (coth(k * t) + sign * csch(k * t)), rtol=1e-5)
+
+    # London superconductor
+    lam = 100e-9
+    sigma = 1 / (1j * w * sc.mu_0 * lam**2)
+    for t_over_lam in [0.05, 0.8, 1., 2., 5.]:
+        t = t_over_lam * lam
+        for excitation, sign in [('symmetric', 1), ('antisymmetric', -1)]:
+            zs = mb.film_impedance(f, [(sigma, t)], excitation=excitation)
+            expected = 1j * w * sc.mu_0 * lam * (coth(t / lam) + sign * csch(t / lam))
+            np.testing.assert_allclose(zs, expected, rtol=1e-5)
+
+    # Thin superconductor, symmetric: the two faces in parallel are the
+    # kinetic inductance mu0 lambda^2 / t per square (with csch / 2, as in
+    # Kerr's table, it would be 0.75 of that)
+    t = 2e-9
+    zs = mb.film_impedance(f, [(sigma, t)], excitation='symmetric')
+    np.testing.assert_allclose(zs / 2, 1j * w * sc.mu_0 * lam**2 / t, rtol=1e-3)
+
+    # Thick film: both sides decouple, the one-sided value with no backing
+    for excitation in ('symmetric', 'antisymmetric'):
+        np.testing.assert_allclose(mb.film_impedance(f, [(sigma, 3e-6)], excitation=excitation),
+                                   mb.film_impedance(f, [(sigma, 3e-6)], z_back=np.inf), rtol=1e-12)
+
+    # f=0, Mattis-Bardeen through surface_impedance, and errors
+    assert mb.film_impedance(0., [(1 / rho, 5e-9)], excitation='symmetric') == pytest.approx(2 * rho / 5e-9, rel=1e-14)
+    assert mb.film_impedance(0., [(1 / rho, 5e-9)], excitation='antisymmetric') == 0
+    fs = np.array([0., 100e9, 900e9])
+    zs = mb.surface_impedance(fs, 100e-9, 4.2, method='film', excitation='symmetric')
+    assert zs[0] == 0
+    np.testing.assert_allclose(zs[1:], mb.film_impedance(fs[1:], [(mb.conductance(fs[1:], 4.2), 100e-9)],
+                                                         excitation='symmetric'), rtol=1e-14)
+    with pytest.raises(ValueError, match="single layer"):
+        mb.film_impedance(f, [(sigma, t), (sigma, t)], excitation='symmetric')
+    with pytest.raises(ValueError, match="single layer"):
+        mb.film_impedance(f, [(sigma, t)], z_back=0., excitation='symmetric')
+    with pytest.raises(ValueError, match="Excitation not recognized"):
+        mb.film_impedance(f, [(sigma, t)], excitation='both')
+    with pytest.raises(ValueError, match="excitation"):
+        mb.surface_impedance(f, 100e-9, 4.2, excitation='symmetric')
+
+
+def test_two_sheet_impedance():
+    """Kerr (1996), Fig. 5 and 6: sheet impedance Zx for a conductor of
+    thickness t modelled as two sheets t apart, such that Zx || (j w mu0 t +
+    Zx) = Zs. For a London superconductor Zx = beta Zs, with beta = 1 - u +
+    sqrt(1 + u^2), u = t / (2 lambda coth(t / lambda)): 2 for thin, 1 for
+    thick conductors."""
+
+    f, lam = 100e9, 100e-9
+    w = 2 * np.pi * f
+    for t_over_lam in [0.1, 0.3, 1., 3., 10., 100.]:
+        t = t_over_lam * lam
+        zs = 1j * w * sc.mu_0 * lam / np.tanh(t / lam)
+        u = t / (2 * lam / np.tanh(t / lam))
+        beta = 1 - u + np.sqrt(1 + u**2)
+        assert mb.two_sheet_impedance(zs, f, t) == pytest.approx(beta * zs, rel=1e-12)
+    assert mb.two_sheet_impedance(1j * w * sc.mu_0 * lam / np.tanh(0.01), f, 0.01 * lam) / \
+        (1j * w * sc.mu_0 * lam / np.tanh(0.01)) == pytest.approx(2, rel=1e-4)
+
+    # Any passive Zs (Mattis-Bardeen, below and above the gap; normal metal):
+    # the two-sheet circuit reproduces Zs, and the root is the physical one
+    fs = np.array([100e9, 500e9, 700e9, 1.2e12])
+    t = 300e-9
+    for zs in [mb.surface_impedance(fs, t, 4.2, method='film'), (1 + 1j) * np.sqrt(np.pi * fs * sc.mu_0 * 2e-8)]:
+        zx = mb.two_sheet_impedance(zs, fs, t)
+        wl = 1j * 2 * np.pi * fs * sc.mu_0 * t
+        np.testing.assert_allclose(zx * (wl + zx) / (2 * zx + wl), zs, rtol=1e-12)
+        assert np.all(zx.real >= 0) and np.all(np.abs(zx) <= 2 * np.abs(zs) * (1 + 1e-12))
+
+    # A perfect conductor stays perfect
+    assert mb.two_sheet_impedance(0., f, t) == 0
+
+
 def test_compare_simple_and_MB_models():
     """Compare the surface impedance that is calculated from Mattis-Bardeen
     theory to the results from [1]."""
@@ -605,4 +705,6 @@ if __name__ == "__main__":
     test_belitsky2006_fig2()
 
     test_kerr1996_finite_thickness()
+    test_two_sided_excitation()
+    test_two_sheet_impedance()
     test_compare_simple_and_MB_models()

@@ -86,8 +86,16 @@ Zs = mb.film_impedance(f, [(sigma_nb, 20e-9), (1 / 2.2e-8, 300e-9)])
 # Above Tc, the normal state
 Zs = mb.surface_impedance(f, d, 10., **param)
 
+# Fields on both sides of the film, e.g., a stripline center conductor
+Zs = mb.surface_impedance(f, d, T, method='film', excitation='symmetric', **param)
+
 # BCS penetration depth
 lam = mb.penetration_depth(T, **param)
+```
+
+For planar EM simulators that model a thick conductor as two sheets (e.g., Sonnet em), ``two_sheet_impedance`` gives the modified sheet impedance from Kerr (1996), so that the pair of sheets presents the actual surface impedance:
+```python
+Zx = mb.two_sheet_impedance(Zs, f, d)
 ```
 
 References

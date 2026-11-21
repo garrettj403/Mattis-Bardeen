@@ -330,7 +330,7 @@ def _reduced_conductance(f, T, Vgap):
 
 # Surface Impedance ----------------------------------------------------------
 
-def surface_impedance(f, d, T, Vgap=None, method='MB', z_back=None, **kw):
+def surface_impedance(f, d, T, Vgap=None, method='MB', z_back=None, excitation=None, **kw):
     """Calculate the surface impedance of a superconductor using Mattis-
     Bardeen theory.
 
@@ -345,10 +345,14 @@ def surface_impedance(f, d, T, Vgap=None, method='MB', z_back=None, **kw):
             of Belitsky & Kollberg (Eqn. 5 in [2], i.e., no fields behind
             the film and no displacement current), 'film' for
             Mattis-Bardeen with the transmission-line model of the film
-            (see film_impedance), or 'simple' for the simplified surface
-            impedance from Kerr (1996).
+            (see film_impedance), or 'simple' for the London-limit
+            formula j w mu0 lambda coth(d / lambda) of Kerr (1996), with
+            the empirical two-fluid temperature dependence of lambda (see
+            _surface_impedance_simple).
         z_back (complex): with method='film', the impedance behind the
             film, in units [ohms]; default is the impedance of free space
+        excitation (str): with method='film', 'one-sided' (default),
+            'symmetric' or 'antisymmetric' (see film_impedance)
 
     Keyword arguments:
         Tc (float): critical temperature, in units [K]
@@ -374,6 +378,8 @@ def surface_impedance(f, d, T, Vgap=None, method='MB', z_back=None, **kw):
         raise ValueError(f"Method not recognized: {method!r} (use 'MB', 'film' or 'simple')")
     if z_back is not None and method != 'film':
         raise ValueError("z_back is only used with method='film'")
+    if excitation is not None and method != 'film':
+        raise ValueError("excitation is only used with method='film'")
 
     # Using Mattis-Bardeen theory...
     if method == 'mb':
@@ -386,7 +392,8 @@ def surface_impedance(f, d, T, Vgap=None, method='MB', z_back=None, **kw):
     elif method == 'film':
         Vgap = _resolve_gap(Vgap, T, kw)
         f = np.asarray(f, dtype=float)
-        zs = np.asarray(film_impedance(f, [(conductance(f, T, Vgap, **kw), d)], z_back))
+        zs = np.asarray(film_impedance(f, [(conductance(f, T, Vgap, **kw), d)], z_back,
+                                       excitation=excitation or 'one-sided'))
         if Vgap > 0:
             # Superconductor at f=0: exactly zero, as with method='MB'
             zs = np.where(f == 0, 0j, zs)
@@ -435,9 +442,15 @@ def _surface_impedance(f, d, T, Vgap, sigma_n):
 
 
 def _surface_impedance_simple(f, d, dl):
-    """Calculate the surface impedance of a superconductor using the simple
-    model presented in [1]. This techniques assumes that the frequency much
-    lower than the gap frequency.
+    """Calculate the surface impedance of a superconductor in the London
+    limit: Zs = j w mu0 lambda coth(d / lambda), from [1] (Appendix A5,
+    with Zn >> |Zs|, i.e., no fields behind the film). It assumes that the
+    frequency is much lower than the gap frequency.
+
+    The temperature dependence of the penetration depth used by
+    surface_impedance(method='simple'), lambda0 / sqrt(1 - (T/Tc)^4) (see
+    _lambda), is the empirical two-fluid (Gorter-Casimir) law; it is not
+    from [1], which takes lambda as given.
 
     Args:
         f (ndarray): frequency, in units [Hz]
@@ -445,7 +458,7 @@ def _surface_impedance_simple(f, d, dl):
         dl (float): London penetration depth
 
     Returns:
-        surfance impedance
+        surface impedance
 
     """
 
@@ -460,7 +473,7 @@ def _surface_impedance_simple(f, d, dl):
 
 # Films of finite thickness --------------------------------------------------
 
-def film_impedance(f, layers, z_back=None):
+def film_impedance(f, layers, z_back=None, excitation='one-sided'):
     """Surface impedance of a film, or a stack of films, of finite thickness.
 
     Each layer is treated as a section of transmission line, with the wave
@@ -482,6 +495,26 @@ def film_impedance(f, layers, z_back=None):
     free space gives its sheet resistance in parallel with 377 ohms, and a
     superconductor (with the huge f=0 value from conductance) gives ~0.
 
+    Excitation from both sides (a single layer, no backing): when there are
+    fields on both sides of the film, the effective surface impedance seen
+    from either side is (Kerr 1996, Appendix A6 and A7, generalized to any
+    conductivity)
+
+        Zs = Z1 [coth(gamma d) +/- csch(gamma d)]
+           = Z1 coth(gamma d / 2)  ('symmetric')
+           = Z1 tanh(gamma d / 2)  ('antisymmetric')
+
+    with Z1 and gamma = j k1 the wave impedance and propagation constant in
+    the metal. 'symmetric' is for equal currents in the same direction on
+    the two faces, e.g., a stripline center conductor (for a thin
+    superconductor, both faces in parallel give the kinetic inductance
+    mu0 lambda^2 / d per square); 'antisymmetric' is for opposite currents,
+    e.g., a septum in a waveguide. (Kerr's report prints sinh, and its
+    table uses csch / 2, in place of csch in the superconducting case; its
+    own derivation, and the normal-metal formula, give csch.) At f=0:
+    2 / (sigma d) ('symmetric', each face carries half the current) and 0
+    ('antisymmetric').
+
     Args:
         f (float or array-like): frequency, in units [Hz] (non-negative)
         layers (list): ``(sigma, d)`` pairs, starting from the layer that
@@ -492,6 +525,9 @@ def film_impedance(f, layers, z_back=None):
         z_back (complex): impedance behind the last layer, in units [ohms]
             (scalar or one value per frequency; np.inf for no fields behind
             the film); default is the impedance of free space
+        excitation (str): 'one-sided' (default; fields on the front only,
+            with the backing z_back), or 'symmetric' or 'antisymmetric' for
+            fields on both sides of a single layer (no z_back)
 
     Returns:
         surface impedance, in units [ohms] (complex, or complex ndarray with
@@ -510,19 +546,45 @@ def film_impedance(f, layers, z_back=None):
     layers = [(np.broadcast_to(np.asarray(sigma, dtype=complex), f.shape), d) for sigma, d in layers]
     if len(layers) == 0:
         raise ValueError("Need at least one layer.")
+    excitation = excitation.lower()
+    if excitation not in ('one-sided', 'symmetric', 'antisymmetric'):
+        raise ValueError(f"Excitation not recognized: {excitation!r} "
+                         "(use 'one-sided', 'symmetric' or 'antisymmetric')")
+    two_sided = excitation != 'one-sided'
+    if two_sided and (len(layers) != 1 or z_back is not None):
+        raise ValueError("Excitation from both sides needs a single layer and no z_back")
     z_back = np.broadcast_to(np.asarray(z_vac if z_back is None else z_back, dtype=complex), f.shape)
 
     ac, dc = f > 0, f == 0
     zs = np.empty(f.shape, dtype=complex)
-
-    # Transmission-line model, from the back of the stack to the front
     k0 = 2 * np.pi * f[ac] / sc.c
-    z_in = z_back[ac].copy()
-    for sigma, d in reversed(layers):
+
+    def _wave(sigma):
+        # Wavenumber and wave impedance of a plane wave in the metal
         factor = np.sqrt(1. - 1j * z_vac * sigma[ac] / k0 + 0j)
         factor = np.where(factor.imag > 0, -factor, factor)  # waves decay into the metal
-        k1 = k0 * factor
-        z1 = z_vac / factor
+        return k0 * factor, z_vac / factor
+
+    if two_sided:
+        (sigma, d), = layers
+        k1, z1 = _wave(sigma)
+        decay = np.exp(-1j * k1 * d)  # exp(-gamma d), |decay| < 1
+        if excitation == 'symmetric':
+            zs[ac] = z1 * (1 + decay) / (1 - decay)  # Z1 coth(gamma d / 2)
+        else:
+            zs[ac] = z1 * (1 - decay) / (1 + decay)  # Z1 tanh(gamma d / 2)
+        if dc.any():
+            if excitation == 'symmetric':
+                g = sigma[dc] * d / 2  # each face carries half the current
+                zs[dc] = np.where(np.isinf(g), 0j, 1 / np.where(np.isinf(g), 1., g))
+            else:
+                zs[dc] = 0
+        return complex(zs) if zs.ndim == 0 else zs
+
+    # Transmission-line model, from the back of the stack to the front
+    z_in = z_back[ac].copy()
+    for sigma, d in reversed(layers):
+        k1, z1 = _wave(sigma)
         with np.errstate(invalid='ignore'):
             refl = np.where(np.isinf(z_in), 1., (z_in - z1) / (z_in + z1))
         gamma = refl * np.exp(-2j * k1 * d)
@@ -537,6 +599,57 @@ def film_impedance(f, layers, z_back=None):
         zs[dc] = np.where(np.isinf(g), 0j, 1 / np.where(np.isinf(g), 1., g))
 
     return complex(zs) if zs.ndim == 0 else zs
+
+
+def two_sheet_impedance(zs, f, t):
+    """Sheet impedance for a thick conductor modelled as two thin sheets.
+
+    Planar EM simulators such as Sonnet em can represent a conductor of
+    thickness t by two conducting sheets a distance t apart. The magnetic
+    field between the sheets adds an inductance mu0 t per square, so the
+    sheets need a modified surface impedance Zx for the pair to present the
+    actual surface impedance Zs (Kerr 1996, Fig. 5): Zs = Zx || (j w mu0 t +
+    Zx), whose solution is
+
+        Zx = (1/2) [(2 Zs - j w mu0 t) + sqrt(4 Zs^2 - (w mu0 t)^2)],
+
+    taking the root that tends to 2 Zs for thin conductors (the two sheets
+    in parallel) and to Zs for thick ones. The impedance of free space is
+    neglected (|Zs| << 377 ohms) and t is assumed to be much smaller than
+    the wavelength. For a London superconductor, Zs = j w mu0 lambda
+    coth(t / lambda), this is Zx = beta Zs with Kerr's beta = 1 - u +
+    sqrt(1 + u^2), u = t / (2 lambda coth(t / lambda)), which goes from 2
+    (thin) to 1 (thick).
+
+    Whether this is needed depends on how the simulator models thick
+    conductors (check its documentation): it applies to the two-sheet model
+    described by Kerr, not to single-sheet or volume-meshed conductors.
+
+    Args:
+        zs (complex or array-like): surface impedance of the conductor
+            (e.g., from surface_impedance or film_impedance), in units
+            [ohms]
+        f (float or array-like): frequency, in units [Hz]
+        t (float): conductor thickness, in units [m]
+
+    Returns:
+        sheet impedance of each of the two sheets, in units [ohms] (complex,
+        or complex ndarray)
+
+    >>> zs = 1j * 2 * np.pi * 100e9 * 4e-7 * np.pi * 100e-9  # 1 um of Nb, lambda = 100 nm
+    >>> round(abs(two_sheet_impedance(zs, 100e9, 1e-6) / zs), 3)  # beta for t / lambda = 10
+    1.099
+
+    """
+
+    zs = np.asarray(zs, dtype=complex)
+    wl = 2 * np.pi * np.asarray(f, dtype=float) * sc.mu_0 * t  # w mu0 t
+    root = np.sqrt(4 * zs**2 - wl**2 + 0j)
+    # The root on the side of 2 Zs (passive Zs: Re, Im >= 0)
+    root = np.where((root * np.conj(zs)).real < 0, -root, root)
+    zx = 0.5 * (2 * zs - 1j * wl + root)
+
+    return complex(zx) if zx.ndim == 0 else zx
 
 
 # Penetration depths ---------------------------------------------------------
