@@ -61,7 +61,7 @@ plt.show()
 
 ```
 <center>
-<img src="https://raw.githubusercontent.com/garrettj403/Mattis-Bardeen/master/example.png" alt="drawing" width="500">
+<img src="https://raw.githubusercontent.com/garrettj403/Mattis-Bardeen/master/examples/example.png" alt="drawing" width="500">
 </center>
 
 If the gap voltage at temperature ``T`` is not known, omit ``Vgap`` and it is calculated from ``Vgap0`` and ``Tc`` by solving the BCS gap equation:
