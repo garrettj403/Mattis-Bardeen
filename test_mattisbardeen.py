@@ -91,8 +91,9 @@ def test_vgap_default_uses_bcs():
 
 def test_zero_temperature_closed_form():
     """At T=0 the Mattis-Bardeen integrals reduce to complete elliptic
-    integrals (Mattis & Bardeen 1958; Tinkham, Introduction to
-    Superconductivity, Eq. 3.125). With x = hbar*omega / 2*Delta:
+    integrals (D. C. Mattis and J. Bardeen, Phys. Rev. 111, 412 (1958),
+    Eqs. 3.11-3.13; also Tinkham, Introduction to Superconductivity,
+    Eq. 3.125). With x = hbar*omega / 2*Delta:
 
         sigma1/sigma_n = 0                                  (x < 1)
                        = (1 + 1/x) E(k) - (2/x) K(k)        (x > 1)
@@ -275,30 +276,42 @@ def test_belitsky1995_fig6():
 def test_belitsky2006_fig2():
     """Recreate Figure 2 from:
 
-        V. Y. Belitsky and E. L. Kollberg, “Superconductor–insulator–
-        superconductor tunnel strip line: Features and applications,” J. Appl.
-        Phys., vol. 80, no. 8, pp. 4741–4748, Oct. 1996.
+        V. Belitsky, C. Risacher, M. Pantaleev, and V. Vassilev,
+        “Superconducting microstrip line model studies at millimetre and
+        sub-millimetre waves,” Int. J. Infrared Millimeter Waves, vol. 27,
+        no. 6, pp. 809–834, 2006.
+
+    The caption gives sigma_n = 1.739e7 S/m, Tc = 8.1 K, lambda0 = 85 nm and
+    T = 4 K, but not the gap. The gap at T=0 follows from the paper's Eq. 2,
+    lambda0 = sqrt(hbar / (pi mu0 sigma_n Delta0)), and the gap at 4 K from
+    BCS theory (2.546 mV; the gap frequency, 616 GHz, is close to the
+    "about 650 GHz" in the text).
 
     """
 
-    # Parameters
+    # Parameters (Fig. 2 caption)
     T = 4.0
-    Vgap = 2.53e-3  # Gap voltage is not specified in the paper!!!
-    param = dict(sigma_n=1.739e7, Tc=8.1, Vgap0=2.65e-3, lambda0=85*sc.nano)
+    sigma_n, Tc, lambda0 = 1.739e7, 8.1, 85*sc.nano
+
+    # Gap voltage at T=0 from Eq. 2, and at T from BCS theory
+    Vgap0 = 2 * mb.hbar / (np.pi * sc.mu_0 * sigma_n * lambda0**2)
+    param = dict(sigma_n=sigma_n, Tc=Tc, Vgap0=Vgap0, lambda0=lambda0)
+    assert mb._lambda0(**param) == pytest.approx(lambda0, rel=1e-12)
+    Vgap = mb.gap_voltage(T, Vgap0, Tc)
 
     # Calculate sigma_1
     filename = 'validation-data/belitsky2006/belitsky2006-fig2-sigma1.txt'
     fghz, lit_sigma1 = np.genfromtxt(filename, delimiter=',').T
     sigma = mb.conductance(fghz * 1e9, T, Vgap, **param)
     max_difference = np.abs(lit_sigma1 - sigma.real / param['sigma_n']).max()
-    assert max_difference < 0.02
+    assert max_difference < 0.01
 
     # Calculate sigma_2
     filename = 'validation-data/belitsky2006/belitsky2006-fig2-sigma2.txt'
     fghz, lit_sigma2 = np.genfromtxt(filename, delimiter=',').T
     sigma = mb.conductance(fghz * 1e9, T, Vgap, **param)
     max_difference = np.abs(lit_sigma2 + sigma.imag / param['sigma_n']).max()
-    assert max_difference < 0.2
+    assert max_difference < 0.15  # sigma2/sigma_n is up to ~5 here: ~3% (digitizing)
 
     # Calculate E-field penetration
     filename = 'validation-data/belitsky2006/belitsky2006-fig2-lambda.txt'
@@ -307,7 +320,7 @@ def test_belitsky2006_fig2():
     zs = mb.surface_impedance(fghz * 1e9, d, T, Vgap, **param)
     _lambda = mb.efield_penetration(zs, fghz * 1e9) / mb._lambda0(**param)
     max_difference = np.abs(_lambda - lit_lambda).max()
-    assert max_difference < 0.1
+    assert max_difference < 0.07
 
     # Calculate H-field penetration
     filename = 'validation-data/belitsky2006/belitsky2006-fig2-delta.txt'
@@ -316,7 +329,64 @@ def test_belitsky2006_fig2():
     zs = mb.surface_impedance(fghz * 1e9, d, T, Vgap, **param)
     _delta = mb.hfield_penetration(zs, fghz * 1e9) / mb._lambda0(**param)
     max_difference = np.abs(_delta - lit_delta).max()
-    assert max_difference < 0.1
+    assert max_difference < 0.08
+
+
+def test_kerr1996_finite_thickness():
+    """Compare the film model with the closed-form surface impedance of a
+    film of thickness t backed by free space, from:
+
+        A. R. Kerr, “Surface impedance of superconductors and normal
+        conductors in EM simulators,” NRAO Electronics Division Internal
+        Report 302, 1996 (p. 5, and Appendix A4, A5).
+
+    Normal conductor (k = (1 + j) / delta, delta the skin depth):
+
+        Zs = (k/sigma) [e^kt + r e^-kt] / [e^kt - r e^-kt],
+        r = (Zn - k/sigma) / (Zn + k/sigma)
+
+    Superconductor (London, penetration depth lambda):
+
+        Zs = j w mu0 lambda [e^(t/lambda) + r e^(-t/lambda)] /
+                            [e^(t/lambda) - r e^(-t/lambda)],
+        r = (Zn - j w mu0 lambda) / (Zn + j w mu0 lambda)
+
+    with Zn the impedance of free space. Kerr's circuit model has no
+    displacement current; in film_impedance it changes Zs by O((k0 delta)^2)
+    or O((k0 lambda)^2), < 1e-5 here. For Zn >> |Zs| the superconductor
+    reduces to j w mu0 lambda coth(t / lambda), which is method='simple'.
+
+    """
+
+    z_n = sc.mu_0 * sc.c
+    f = np.array([10e9, 100e9, 1e12])
+    w = 2 * np.pi * f
+
+    def kerr(z1, kt):
+        r = (z_n - z1) / (z_n + z1)
+        return z1 * (np.exp(kt) + r * np.exp(-kt)) / (np.exp(kt) - r * np.exp(-kt))
+
+    # Normal conductor (copper-like), thin to thick compared with the skin depth
+    rho = 2e-8
+    skin = np.sqrt(2 * rho / (w * sc.mu_0))
+    k = (1 + 1j) / skin
+    for t_over_skin in [0.01, 0.1, 0.5, 1., 3.]:
+        t = t_over_skin * skin
+        zs = np.array([mb.film_impedance(fi, [(1 / rho, ti)]) for fi, ti in zip(f, t)])
+        np.testing.assert_allclose(zs, kerr(k * rho, k * t), rtol=1e-5)
+
+    # Superconductor in the London limit: sigma = 1 / (j w mu0 lambda^2)
+    lam = 100e-9
+    sigma = 1 / (1j * w * sc.mu_0 * lam**2)
+    for t_over_lam in [0.1, 0.5, 1., 2., 5.]:
+        t = t_over_lam * lam
+        zs = mb.film_impedance(f, [(sigma, t)])
+        np.testing.assert_allclose(zs, kerr(1j * w * sc.mu_0 * lam, t / lam), rtol=1e-5)
+
+    # Zn >> |Zs|: j w mu0 lambda coth(t / lambda), i.e., method='simple'
+    t = 300e-9
+    zs = mb.film_impedance(f, [(sigma, t)], z_back=np.inf)
+    np.testing.assert_allclose(zs, mb._surface_impedance_simple(f, t, lam), rtol=1e-5)
 
 
 def test_compare_simple_and_MB_models():
@@ -534,4 +604,5 @@ if __name__ == "__main__":
     test_belitsky1995_fig6()
     test_belitsky2006_fig2()
 
+    test_kerr1996_finite_thickness()
     test_compare_simple_and_MB_models()
